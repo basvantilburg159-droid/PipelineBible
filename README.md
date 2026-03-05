@@ -1,194 +1,177 @@
-# PipelineBible v1.1
+# Pipe Standards Pro v12
 
-**Professional Pipeline & Piping Standards Tool**
-
-## Overview
-
-PipelineBible is a comprehensive engineering tool providing industry-standard piping and pipeline data for mechanical and pipeline engineers.
+Modern desktop application for pipe standards (ASME B36.10 & DIN EN 10220) with 2D/Isometric/3D visualizations.
 
 ## Features
 
-### Pipe Standards
-- **ASME B36.10M** - NPS 1/2" to 56" (full schedule range)
-- **DIN EN 10220 / ISO 4200** - DN15 to DN600
+### 🎨 Modern Dark Theme GUI
+- Professional dark color scheme (`#1a1b2e` background, `#00d4aa` accent)
+- Card-based layout with clean typography
+- Smooth transitions and visual feedback
 
-### Flange Standards
-- **ASME B16.5** - Class 150, 300, 600, 900, 1500
-- **ASME B16.47 Series A & B** - Large diameter flanges (NPS 26"-56")
-- **DIN EN 1092-1** - PN 10, 16, 25, 40
+### 📐 Multiple Visualization Modes
+- **2D Cross-Section**: Technical drawings with dimensions
+- **Isometric View**: 30° projection for technical clarity
+- **3D Interactive**: Rotatable 3D models with cutaway views
+
+### 🔧 Comprehensive Standards Support
+- **ASME B36.10**: NPS 1/8" to 36" with multiple schedules (5S, 10S, STD, XS, XXS, etc.)
+- **DIN EN 10220**: DN 6 to 600 with various wall thicknesses
+- Complete data for:
+  - Pipes (with wall thickness, inner diameter calculations)
+  - 90° Elbows/Bends (Long Radius & Short Radius)
+  - Flanges (ASME B16.5 Class 150/300/600, DIN PN 10/16/40)
+
+### 📊 Flow Calculator
+- Velocity calculations
+- Reynolds number determination
+- Flow regime identification (Laminar/Turbulent)
+- Pressure drop calculations (Darcy-Weisbach equation)
+
+### 💾 Export Capabilities
+- PNG images (high resolution)
+- PDF documents
+- SVG vector graphics
+
+### ⚡ User Experience Features
+- Live search and filtering
+- Keyboard shortcuts (Ctrl+1/2/3/4 for tabs)
+- Status bar with context information
+- Recent items tracking
+
+## Installation
+
+### Requirements
+```bash
+pip install matplotlib numpy tkinter
+```
+
+Note: `tkinter` comes pre-installed with most Python distributions.
+
+### Running the Application
+```bash
+python pipe_standards_v12.py
+```
+
+## File Structure
+
+```
+PipelineBible/
+├── pipe_standards_v12.py     # Main application
+├── constants.py               # Color schemes, pipe/bend/flange data
+├── data_models.py             # Data structures and calculations
+├── gui_components.py          # Reusable UI widgets (dark theme)
+├── visualization_2d.py        # 2D cross-section drawings
+├── visualization_iso.py       # Isometric projections
+├── visualization_3d.py        # 3D matplotlib rendering
+├── utils.py                   # Helper functions
+└── README.md                  # This file
+```
+
+## Usage
+
+### Viewing Pipes
+1. Select "Pipes" tab (or press `Ctrl+1`)
+2. Choose standard (ASME or DIN)
+3. Click on a pipe in the table
+4. Switch between 2D/ISO/3D views using the toggle buttons
+
+### Viewing Bends
+1. Select "Bochten" tab (or press `Ctrl+2`)
+2. Choose a bend from the table
+3. View in 2D, isometric, or 3D mode
+
+### Viewing Flanges
+1. Select "Flenzen" tab (or press `Ctrl+3`)
+2. Choose a flange from the table
+3. Visualize bolt patterns and dimensions
+
+### Flow Calculations
+1. Select "Flow" tab (or press `Ctrl+4`)
+2. Enter:
+   - Pipe inner diameter (m)
+   - Flow rate (m³/s)
+   - Pipe length (m)
+   - Roughness factor (m)
+3. Click "Calculate"
+4. View velocity, Reynolds number, flow regime, and pressure drop
+
+### Exporting
+- Click "Export" button in the header
+- Choose format: PNG, PDF, or SVG
+- Select save location
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+1` | Switch to Pipes tab |
+| `Ctrl+2` | Switch to Bochten tab |
+| `Ctrl+3` | Switch to Flenzen tab |
+| `Ctrl+4` | Switch to Flow tab |
+| `Ctrl+E` | Export current view |
+| `Ctrl+F` | Focus search bar |
+
+## Technical Details
+
+### Pipe Data
+- **ASME B36.10**: 33 nominal pipe sizes with 159 schedule variations
+- **DIN EN 10220**: 23 DN sizes with 151 wall thickness options
+
+### Bend Data
+- 90° elbows for standard sizes
+- Long Radius (LR) and Short Radius (SR) types
+- Center-line radius calculations
+
+### Flange Data
+- **ASME B16.5**: Class 150, 300, 600 (selected sizes)
+- **DIN EN 1092-1**: PN 10, 16, 40 (selected sizes)
+- Bolt circle diameter, bolt count, and bolt size specifications
+
+### Visualization Technology
+- **2D**: Matplotlib patches (Circle, Rectangle, Polygon)
+- **Isometric**: 30° rotation matrix transformation
+- **3D**: mplot3d with surface meshes and Poly3DCollection
 
 ### Calculations
-- Pipe dimensions (OD, ID, wall thickness, weight/meter)
-- Bend calculations (1D to 10D radius)
-- Flange bolt length calculations
-- Gasket specifications (Spiral Wound, RTJ, Kammprofile, etc.)
-- ASME & DIN bolt/stud specifications
+- Inner diameter: `ID = OD - 2×WT`
+- Cross-sectional area: `A = π × (ID/2)²`
+- Flow velocity: `v = Q / A`
+- Reynolds number: `Re = (v × D) / ν`
+- Darcy-Weisbach pressure drop: `ΔP = f × (L/D) × (ρv²/2)`
 
-### Unit Support
-- Full metric (mm) and imperial (inch) unit support
-- Automatic unit conversion throughout
+## Color Scheme
 
-## Data Coverage
+| Element | Color | Hex Code |
+|---------|-------|----------|
+| Background Primary | Dark Navy | `#1a1b2e` |
+| Background Secondary | Card | `#252640` |
+| Accent Primary | Turquoise | `#00d4aa` |
+| Accent Secondary | Gold | `#f5c211` |
+| Steel | Blue-Gray | `#8090a8` |
+| Text Primary | Light Gray | `#e8eaed` |
+| Text Secondary | Medium Gray | `#a8aeb8` |
 
-- **40+ pipe OD sizes** from NPS 1/8" to NPS 56"
-- **15+ schedule types** (5S, 10S, 20, 30, STD, XS, XXS, etc.)
-- **250+ flange configurations**
-- **6 bend radius types**
-- **Multiple gasket types** for all pressure classes
+## Future Enhancements
 
-## Technical Specifications
-
-- ASME standards for North American markets
-- DIN/EN standards for European/international markets
-- Material calculations based on carbon steel (density 7850 kg/m³)
-- Comprehensive bolt length calculations including thread protrusion
-
-## Quick Start - Testen
-
-### 1. Clone de repository
-```bash
-git clone https://github.com/basvantilburg159-droid/PipelineBible.git
-cd PipelineBible
-```
-
-### 2. Run het test script
-```bash
-python3 test_pipelinebible.py
-```
-
-Dit test script demonstreert alle functionaliteit:
-- ✓ Pipe lookup (ASME & DIN)
-- ✓ Flange lookup (alle classes)
-- ✓ Pretty print formatters
-- ✓ Data export (CSV & JSON)
-- ✓ Calculatie functies (bend, bolt length, etc.)
-- ✓ Database coverage check
-
-### 3. Snel testen in Python
-```python
-python3
->>> from PipelineBible import PipeLookup, FlangeLookup
->>> 
->>> # Test pipe lookup
->>> dims = PipeLookup.get_pipe_dimension('6', 'STD', 'ASME')
->>> print(f"NPS 6\" STD: OD={dims['od']}mm, WT={dims['wt']}mm")
->>> 
->>> # Test flange lookup
->>> flange = FlangeLookup.get_flange_data('6', 150, 'ASME')
->>> print(f"Class 150: {flange['bolt_holes']} x {flange['bolt_size']}\" bolts")
-```
-
-## Usage (v1.1)
-
-### Basic Pipe Lookup
-
-```python
-from PipelineBible import PipeLookup
-
-# Get pipe dimensions
-dims = PipeLookup.get_pipe_dimension('6', 'STD', 'ASME')
-print(f"OD: {dims['od']} mm")
-print(f"WT: {dims['wt']} mm")
-print(f"ID: {dims['id']} mm")
-print(f"Weight: {dims['kg']} kg/m")
-
-# List available schedules
-schedules = PipeLookup.list_schedules('6', 'ASME')
-print(schedules)  # ['5S', '10S', '40/STD', '80/XS', ...]
-
-# Validate pipe size
-exists = PipeLookup.validate_nps('6', 'ASME')
-```
-
-### Flange Lookup
-
-```python
-from PipelineBible import FlangeLookup
-
-# Get flange data
-flange = FlangeLookup.get_flange_data('6', 150, 'ASME')
-print(f"Flange OD: {flange['flange_od']} mm")
-print(f"Bolt Circle: {flange['bolt_circle']} mm")
-print(f"Bolt Holes: {flange['bolt_holes']}")
-print(f"Series: {flange['series']}")  # B16.5 or B16.47 A/B
-
-# List available classes
-classes = FlangeLookup.list_classes('6', 'ASME')
-print(classes)  # [150, 300, 600, 900, 1500]
-```
-
-### Pretty Printing
-
-```python
-from PipelineBible import PrettyPrint
-
-# Print formatted pipe info
-PrettyPrint.print_pipe('6', 'STD', 'ASME')
-
-# Print formatted flange info
-PrettyPrint.print_flange('6', 150, 'ASME')
-
-# List all available pipe sizes
-PrettyPrint.list_all_pipes('ASME')
-```
-
-### Data Export
-
-```python
-from PipelineBible import DataExport
-
-# Export pipes to CSV
-DataExport.export_pipes_csv('asme_pipes.csv', 'ASME')
-
-# Export flanges to CSV
-DataExport.export_flanges_csv('asme_flanges.csv', 'ASME')
-
-# Export all data to JSON
-DataExport.export_to_json('pipelinebible_asme.json', 'ASME')
-```
-
-### Direct Data Access
-
-```python
-from PipelineBible import ASME_PIPES, DIN_PIPES, ASME_FL, DIN_FL
-
-# Access raw pipe data
-for nps, od, schedules in ASME_PIPES:
-    print(f"{nps}: OD={od} mm")
-    for sch_name, wt in schedules:
-        print(f"  {sch_name}: WT={wt} mm")
-```
-
-## Version History
-
-### v1.1 (2026-03-05)
-**New Features:**
-- 🆕 `PipeLookup` class for simplified pipe data access
-- 🆕 `FlangeLookup` class for flange data queries
-- 🆕 `DataExport` utilities (CSV and JSON export)
-- 🆕 `PrettyPrint` console formatters
-- ✨ Enhanced validation functions
-- ✨ Helper methods for listing available sizes/schedules/classes
-- 📚 Comprehensive usage examples in README
-
-**Improvements:**
-- Better error handling
-- More intuitive API
-- Easier data access patterns
-
-### v1.0 (2026-03-05)
-- Initial release
-- Complete ASME B36.10M pipe database
-- Complete DIN EN 10220 pipe database  
-- ASME B16.5 flange data (Class 150-1500)
-- ASME B16.47 Series A/B large diameter flanges
-- DIN EN 1092-1 flange data
-- Bend, gasket, and bolt calculations
+- [ ] Compare mode (side-by-side comparison)
+- [ ] Favorites system with persistent storage
+- [ ] Unit conversion (metric ↔ imperial)
+- [ ] Custom pipe specifications
+- [ ] Assembly mode (combine pipes, bends, flanges)
+- [ ] PDF report generation with multiple views
+- [ ] Material properties database
+- [ ] Pressure rating calculations
 
 ## License
 
-Professional engineering tool for educational and commercial use.
+This project is for educational and professional use in pipe standards reference.
 
-## Author
+## Credits
 
-Engineering standards database compiled and maintained by pipeline engineering specialists.
+Developed for pipeline engineering professionals requiring quick access to pipe standards and visualizations.
+
+---
+
+**Version**: 12.0  
+**Last Updated**: March 5, 2026
