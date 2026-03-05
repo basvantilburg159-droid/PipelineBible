@@ -43,6 +43,41 @@ PipelineBible is a comprehensive engineering tool providing industry-standard pi
 - Material calculations based on carbon steel (density 7850 kg/m³)
 - Comprehensive bolt length calculations including thread protrusion
 
+## Quick Start - Testen
+
+### 1. Clone de repository
+```bash
+git clone https://github.com/basvantilburg159-droid/PipelineBible.git
+cd PipelineBible
+```
+
+### 2. Run het test script
+```bash
+python3 test_pipelinebible.py
+```
+
+Dit test script demonstreert alle functionaliteit:
+- ✓ Pipe lookup (ASME & DIN)
+- ✓ Flange lookup (alle classes)
+- ✓ Pretty print formatters
+- ✓ Data export (CSV & JSON)
+- ✓ Calculatie functies (bend, bolt length, etc.)
+- ✓ Database coverage check
+
+### 3. Snel testen in Python
+```python
+python3
+>>> from PipelineBible import PipeLookup, FlangeLookup
+>>> 
+>>> # Test pipe lookup
+>>> dims = PipeLookup.get_pipe_dimension('6', 'STD', 'ASME')
+>>> print(f"NPS 6\" STD: OD={dims['od']}mm, WT={dims['wt']}mm")
+>>> 
+>>> # Test flange lookup
+>>> flange = FlangeLookup.get_flange_data('6', 150, 'ASME')
+>>> print(f"Class 150: {flange['bolt_holes']} x {flange['bolt_size']}\" bolts")
+```
+
 ## Usage (v1.1)
 
 ### Basic Pipe Lookup
