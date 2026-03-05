@@ -213,6 +213,13 @@ def run_all_tests():
         print(f"\n✗ ERROR: {e}")
         import traceback
         traceback.print_exc()
+    
+    finally:
+        # Keep console open
+        try:
+            input("\nPress Enter to exit...")
+        except:
+            pass
 
 
 if __name__ == "__main__":

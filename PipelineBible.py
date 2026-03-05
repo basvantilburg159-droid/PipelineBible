@@ -727,6 +727,13 @@ def main():
     print("For full documentation, see README.md")
     print("For GUI application, launch with GUI framework enabled.")
     print("=" * 60)
+    print()
+    
+    # Keep console open
+    try:
+        input("Press Enter to exit...")
+    except:
+        pass
 
 if __name__=="__main__":
     main()
