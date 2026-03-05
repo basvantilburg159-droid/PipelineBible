@@ -1,18 +1,42 @@
 """
-PipelineBible v1.0 – Professional Pipeline & Piping Standards Tool
+PipelineBible v1.1 – Professional Pipeline & Piping Standards Tool
 Extended to NPS 56, ASME & DIN Standards, B16.47 Series A/B
+
+Version 1.1 additions:
+- Enhanced data validation
+- Pipe lookup helper functions
+- Flange lookup helper functions  
+- Export utilities for CSV/JSON
+- Error handling improvements
 """
 
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
-import math, traceback, datetime, csv
-import numpy as np
-import matplotlib
-matplotlib.use("TkAgg")
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.backends.backend_pdf import PdfPages
+import math, traceback, datetime, csv, json
+
+# Optional dependencies for GUI
+try:
+    import tkinter as tk
+    from tkinter import ttk, filedialog, messagebox
+    TKINTER_AVAILABLE = True
+except ImportError:
+    TKINTER_AVAILABLE = False
+
+# Optional dependencies for GUI and plotting
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+
+try:
+    import matplotlib
+    matplotlib.use("TkAgg")
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+    from matplotlib.backends.backend_pdf import PdfPages
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
 
 # ==================================================
 #  COLORS – Dark + Gold
@@ -367,6 +391,274 @@ def _u2(v,inch):
     return "{:.2f} mm".format(v)
 
 # ==================================================
+#  V1.1 NEW FEATURES - HELPER FUNCTIONS
+# ==================================================
+
+class PipeLookup:
+    """Helper class for pipe data lookup and validation"""
+    
+    @staticmethod
+    def find_pipe(nps_or_dn, standard="ASME"):
+        """
+        Find pipe by NPS (ASME) or DN (DIN) designation
+        Returns: (nps, od, schedules_list) or None
+        """
+        pipes = ASME_PIPES if standard == "ASME" else DIN_PIPES
+        for p in pipes:
+            if p[0] == nps_or_dn:
+                return p
+        return None
+    
+    @staticmethod
+    def get_pipe_dimension(nps_or_dn, schedule, standard="ASME"):
+        """
+        Get specific pipe dimensions for a given size and schedule
+        Returns: dict with od, wt, id, etc. or None
+        """
+        pipe = PipeLookup.find_pipe(nps_or_dn, standard)
+        if not pipe:
+            return None
+        
+        nps, od, schedules = pipe
+        for sch_name, wt in schedules:
+            # Match exact or partial schedule names (e.g., "STD" matches "40/STD")
+            if sch_name == schedule or schedule in sch_name or sch_name.startswith(schedule):
+                return cdm(od, wt)
+        return None
+    
+    @staticmethod
+    def list_schedules(nps_or_dn, standard="ASME"):
+        """List all available schedules for a given pipe size"""
+        pipe = PipeLookup.find_pipe(nps_or_dn, standard)
+        if not pipe:
+            return []
+        return [sch[0] for sch in pipe[2]]
+    
+    @staticmethod
+    def validate_nps(nps_or_dn, standard="ASME"):
+        """Check if a pipe size exists in the database"""
+        return PipeLookup.find_pipe(nps_or_dn, standard) is not None
+
+
+class FlangeLookup:
+    """Helper class for flange data lookup and validation"""
+    
+    @staticmethod
+    def find_flange(nps_or_dn, pressure_class, standard="ASME"):
+        """
+        Find flange by size and pressure class
+        Returns: list of matching flanges (may be multiple B16.47 series)
+        """
+        flanges = ASME_FL if standard == "ASME" else DIN_FL
+        matches = []
+        for f in flanges:
+            if f[0] == nps_or_dn and f[1] == pressure_class:
+                matches.append(f)
+        return matches if matches else None
+    
+    @staticmethod
+    def get_flange_data(nps_or_dn, pressure_class, standard="ASME"):
+        """
+        Get flange dimensions
+        Returns: dict with flange_od, thickness, bolt_circle, etc.
+        """
+        matches = FlangeLookup.find_flange(nps_or_dn, pressure_class, standard)
+        if not matches:
+            return None
+        
+        # Return first match (or could return all)
+        f = matches[0]
+        if standard == "ASME":
+            return {
+                'nps': f[0],
+                'class': f[1],
+                'flange_od': f[2],
+                'thickness': f[3],
+                'bolt_circle': f[4],
+                'bolt_holes': f[5],
+                'bolt_size': f[6],
+                'rf_od': f[7],
+                'bore': f[8],
+                'series': FLANGE_SERIES.get((f[0],f[1],f[2],f[4],f[5],f[6]), 'B16.5')
+            }
+        else:  # DIN
+            return {
+                'dn': f[0],
+                'pn': f[1],
+                'flange_od': f[2],
+                'thickness': f[3],
+                'bolt_circle': f[4],
+                'bolt_holes': f[5],
+                'bolt_size': f[6],
+                'rf_od': f[7],
+                'bore': f[8]
+            }
+    
+    @staticmethod
+    def list_classes(nps_or_dn, standard="ASME"):
+        """List all available pressure classes for a given flange size"""
+        flanges = ASME_FL if standard == "ASME" else DIN_FL
+        classes = set()
+        for f in flanges:
+            if f[0] == nps_or_dn:
+                classes.add(f[1])
+        return sorted(list(classes))
+    
+    @staticmethod
+    def validate_flange(nps_or_dn, pressure_class, standard="ASME"):
+        """Check if a flange exists in the database"""
+        return FlangeLookup.find_flange(nps_or_dn, pressure_class, standard) is not None
+
+
+class DataExport:
+    """Export utilities for pipe and flange data"""
+    
+    @staticmethod
+    def export_pipes_csv(filename, standard="ASME"):
+        """Export all pipe data to CSV file"""
+        import csv
+        pipes = ASME_PIPES if standard == "ASME" else DIN_PIPES
+        
+        with open(filename, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Size', 'OD_mm', 'Schedule', 'WT_mm', 'ID_mm', 'Weight_kg_m'])
+            
+            for nps, od, schedules in pipes:
+                for sch_name, wt in schedules:
+                    dims = cdm(od, wt)
+                    writer.writerow([
+                        nps, od, sch_name, 
+                        wt if wt else 'N/A',
+                        dims.get('id', 'N/A'),
+                        dims.get('kg', 'N/A')
+                    ])
+        return filename
+    
+    @staticmethod
+    def export_flanges_csv(filename, standard="ASME"):
+        """Export all flange data to CSV file"""
+        import csv
+        flanges = ASME_FL if standard == "ASME" else DIN_FL
+        
+        with open(filename, 'w', newline='') as f:
+            writer = csv.writer(f)
+            if standard == "ASME":
+                writer.writerow(['NPS', 'Class', 'Flange_OD_mm', 'Thickness_mm', 
+                               'Bolt_Circle_mm', 'Bolt_Holes', 'Bolt_Size', 'RF_OD_mm', 'Bore_mm'])
+            else:
+                writer.writerow(['DN', 'PN', 'Flange_OD_mm', 'Thickness_mm', 
+                               'Bolt_Circle_mm', 'Bolt_Holes', 'Bolt_Size', 'RF_OD_mm', 'Bore_mm'])
+            
+            for f in flanges:
+                writer.writerow(f)
+        return filename
+    
+    @staticmethod
+    def export_to_json(filename, standard="ASME"):
+        """Export all data to JSON format"""
+        import json
+        
+        pipes = ASME_PIPES if standard == "ASME" else DIN_PIPES
+        flanges = ASME_FL if standard == "ASME" else DIN_FL
+        
+        data = {
+            'standard': standard,
+            'version': '1.1',
+            'pipes': [
+                {
+                    'size': p[0],
+                    'od_mm': p[1],
+                    'schedules': [{'schedule': s[0], 'wt_mm': s[1]} for s in p[2]]
+                }
+                for p in pipes
+            ],
+            'flanges': [
+                {
+                    'size': f[0],
+                    'class': f[1],
+                    'flange_od_mm': f[2],
+                    'thickness_mm': f[3],
+                    'bolt_circle_mm': f[4],
+                    'bolt_holes': f[5],
+                    'bolt_size': f[6],
+                    'rf_od_mm': f[7],
+                    'bore_mm': f[8]
+                }
+                for f in flanges
+            ]
+        }
+        
+        with open(filename, 'w') as f:
+            json.dump(data, f, indent=2)
+        return filename
+
+
+class PrettyPrint:
+    """Formatted console output for pipe and flange data"""
+    
+    @staticmethod
+    def print_pipe(nps_or_dn, schedule, standard="ASME"):
+        """Print formatted pipe information"""
+        dims = PipeLookup.get_pipe_dimension(nps_or_dn, schedule, standard)
+        if not dims:
+            print(f"❌ Pipe {nps_or_dn} {schedule} not found in {standard} database")
+            return
+        
+        print("\n" + "="*60)
+        print(f"  {standard} Pipe: {nps_or_dn} Schedule {schedule}")
+        print("="*60)
+        print(f"  Outside Diameter : {dims['od']:.2f} mm  ({dims['oi']:.3f}\")")
+        if dims['wt']:
+            print(f"  Wall Thickness   : {dims['wt']:.2f} mm  ({dims['wi']:.3f}\")")
+            print(f"  Inside Diameter  : {dims['id']:.2f} mm  ({dims['ii']:.3f}\")")
+            print(f"  Inside Radius    : {dims['ir']:.2f} mm  ({dims['ri']:.3f}\")")
+            print(f"  Weight per meter : {dims['kg']:.2f} kg/m (carbon steel)")
+        else:
+            print(f"  Wall Thickness   : Not specified in database")
+        print("="*60 + "\n")
+    
+    @staticmethod
+    def print_flange(nps_or_dn, pressure_class, standard="ASME"):
+        """Print formatted flange information"""
+        data = FlangeLookup.get_flange_data(nps_or_dn, pressure_class, standard)
+        if not data:
+            print(f"❌ Flange {nps_or_dn} Class/PN {pressure_class} not found in {standard} database")
+            return
+        
+        print("\n" + "="*60)
+        if standard == "ASME":
+            print(f"  ASME Flange: {data['nps']}\" Class {data['class']}")
+            print(f"  Series: {data['series']}")
+        else:
+            print(f"  DIN Flange: {data['dn']} PN {data['pn']}")
+        print("="*60)
+        print(f"  Flange OD        : {data['flange_od']:.1f} mm")
+        print(f"  Thickness        : {data['thickness']:.1f} mm")
+        print(f"  Bolt Circle      : {data['bolt_circle']:.1f} mm")
+        print(f"  Bolt Holes       : {data['bolt_holes']}")
+        print(f"  Bolt Size        : {data['bolt_size']}")
+        print(f"  Raised Face OD   : {data['rf_od']:.1f} mm")
+        print(f"  Bore             : {data['bore']:.1f} mm")
+        print("="*60 + "\n")
+    
+    @staticmethod
+    def list_all_pipes(standard="ASME", max_display=20):
+        """List all available pipe sizes"""
+        pipes = ASME_PIPES if standard == "ASME" else DIN_PIPES
+        print(f"\n{standard} Pipe Sizes Available: {len(pipes)} sizes")
+        print("-" * 40)
+        
+        for i, (nps, od, schedules) in enumerate(pipes):
+            if i >= max_display:
+                print(f"... and {len(pipes) - max_display} more sizes")
+                break
+            sch_list = ", ".join([s[0] for s in schedules[:5]])
+            if len(schedules) > 5:
+                sch_list += f" ... (+{len(schedules)-5} more)"
+            print(f"  {nps:8s}  OD: {od:7.1f} mm  Schedules: {sch_list}")
+        print()
+
+# ==================================================
 #  MAIN ENTRY POINT
 # ==================================================
 # NOTE: This is a data library module. Full GUI implementation pending.
@@ -374,7 +666,7 @@ def _u2(v,inch):
 
 def main():
     """
-    PipelineBible v1.0
+    PipelineBible v1.1
     
     This module provides comprehensive piping and pipeline standard data:
     - ASME B36.10M pipes (NPS 1/2" to 56")
@@ -385,10 +677,15 @@ def main():
     - Bend calculations (1D to 10D)
     - Gasket and bolt specifications
     
-    Full GUI application available in the complete version.
+    V1.1 New Features:
+    - PipeLookup class for easy pipe data access
+    - FlangeLookup class for flange data access
+    - DataExport utilities (CSV, JSON)
+    - PrettyPrint console formatters
+    - Enhanced validation functions
     """
     print("=" * 60)
-    print("PipelineBible v1.0")
+    print("PipelineBible v1.1")
     print("Professional Pipeline & Piping Standards Tool")
     print("=" * 60)
     print()
@@ -399,6 +696,35 @@ def main():
     print(f"  - DIN Flanges: {len(DIN_FL)} entries")
     print(f"  - Bend Types: {len(BENDS)}")
     print()
+    print("New in v1.1:")
+    print("  ✓ PipeLookup helper class")
+    print("  ✓ FlangeLookup helper class")
+    print("  ✓ DataExport (CSV/JSON)")
+    print("  ✓ PrettyPrint formatters")
+    print()
+    print("Example Usage:")
+    print("-" * 60)
+    
+    # Demo: Lookup a pipe
+    print("\n>>> PipeLookup.get_pipe_dimension('6', 'STD', 'ASME')")
+    dims = PipeLookup.get_pipe_dimension('6', 'STD', 'ASME')
+    if dims:
+        print(f"    OD: {dims['od']} mm, WT: {dims['wt']} mm, ID: {dims['id']} mm")
+    
+    # Demo: Lookup a flange
+    print("\n>>> FlangeLookup.get_flange_data('6', 150, 'ASME')")
+    flange = FlangeLookup.get_flange_data('6', 150, 'ASME')
+    if flange:
+        print(f"    Flange OD: {flange['flange_od']} mm, Bolt Circle: {flange['bolt_circle']} mm")
+    
+    # Demo: List available schedules
+    print("\n>>> PipeLookup.list_schedules('6', 'ASME')")
+    schedules = PipeLookup.list_schedules('6', 'ASME')
+    print(f"    {schedules}")
+    
+    print()
+    print("=" * 60)
+    print("For full documentation, see README.md")
     print("For GUI application, launch with GUI framework enabled.")
     print("=" * 60)
 
